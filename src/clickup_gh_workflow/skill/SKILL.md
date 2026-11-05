@@ -5,7 +5,7 @@ description: Manage configured ClickUp cards, subtasks, assignments, estimates, 
 
 Run `clickup-gh-workflow --help`; flags --root and --via go before the command. If it is not on PATH, use the installed absolute executable path. Read the target project's .clickup-workflow.toml, Implementation specs and local agent rules. Settings belong to that project: never reuse another team's workspace/List/repository IDs.
 
-The tool works from any shell-capable AI. It does not need a provider SDK or browser. `clickup-gh-workflow skill` prints these instructions. Full usage is in the repository README.
+The tool works from any shell-capable AI. It does not need a provider SDK or browser. `clickup-gh-workflow skill` prints these instructions. Quick start is in the repository README; full usage is in docs/guide.md.
 
 GitHub mode keeps CLICKUP_API_TOKEN in the configured fork's Actions secret. Even reads/previews create scoped automation branches and runs; ClickUp writes require --apply. Local mode reads the token from process environment. Do not ask for credentials in chat or put tokens in arguments, specs or Git.
 

@@ -26,6 +26,8 @@ def install(prefix, skill_dir, apply=False):
         shutil.copytree(SOURCE/'src/clickup_gh_workflow',share,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         (share/'.managed-by').write_text(MARKER+'\n')
         if (SOURCE/'README.md').exists():shutil.copy2(SOURCE/'README.md',share/'README.md')
+        if (SOURCE/'docs/guide.md').exists():
+            (share/'docs').mkdir(exist_ok=True); shutil.copy2(SOURCE/'docs/guide.md',share/'docs/guide.md')
         entry.parent.mkdir(parents=True,exist_ok=True)
         entry.write_text('#!/bin/sh\n# '+MARKER+'\nset -eu\nexec '+shlex.quote(sys.executable)+' '+shlex.quote(str(share/'run.py'))+' "$@"\n')
         entry.chmod(0o755)

@@ -6,4 +6,4 @@ Runtime code lives in `src/clickup_gh_workflow/`. CLI commands preview writes by
 
 For a manual integration test, use a dedicated ClickUp test List and a disposable GitHub fork/branch, then verify read-back and idempotency. Do not use the original author's production List.
 
-Keep README command examples in sync with `--help`. No automatic release or PyPI publishing is configured.
+Keep README and docs/guide.md command examples in sync with `--help`. No automatic release or PyPI publishing is configured.
