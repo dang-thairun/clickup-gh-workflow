@@ -35,6 +35,13 @@ def parser():
     sub.add_parser('skill',help='Print provider-independent AI instructions')
     for name in ('doctor',): add_run_flags(sub.add_parser(name))
     add_run_flags(sub.add_parser('members', help='Read ClickUp List members and authenticated user'))
+    s=sub.add_parser('tasks', help='List open tasks in the configured List (read-only); --mine or --assignee to filter')
+    who=s.add_mutually_exclusive_group()
+    who.add_argument('--mine', action='store_true', help='Your tasks: saved identity, otherwise the ClickUp token owner')
+    who.add_argument('--assignee', help='List member ID, email or username')
+    s.add_argument('--remember', action='store_true', help='Save the resolved member locally as "mine" (.team-workflow/me.json)')
+    s.add_argument('--include-closed', action='store_true')
+    add_run_flags(s)
     for name,help_text in (('assign-backlog','Add an assignee to bound plan cards and their direct subtasks'), ('group-backlog','Organize existing delivery units under configured summary parents')):
         s=sub.add_parser(name,help=help_text)
         s.add_argument('--assignee',type=int,required=True); add_run_flags(s,True)
@@ -147,6 +154,18 @@ def _main(argv, r):
     result=None
     if args.cmd=='doctor': result=rpc('doctor',None)
     elif args.cmd=='members': result=rpc('members',None)
+    elif args.cmd=='tasks':
+        me_path=root/'.team-workflow/me.json'
+        if args.remember and not (args.assignee or args.mine): raise ValueError('--remember needs --assignee or --mine')
+        options={'include_closed':args.include_closed}
+        if args.assignee: options['assignee']=args.assignee
+        elif args.mine:
+            saved=json.loads(me_path.read_text()) if me_path.exists() else {}
+            if saved.get('id'): options.update(assignee=str(saved['id']),assignee_source='saved')
+            else: options['mine']=True
+        result=rpc('tasks',None,False,options)
+        if args.remember and result.get('assignee') and not getattr(args,'prepare_only',False):
+            write(me_path,result['assignee'])
     elif args.cmd=='assign-backlog': result=rpc('assign-backlog',None,args.apply,{'assignee':args.assignee})
     elif args.cmd=='group-backlog':
         options={'assignee':args.assignee}

@@ -106,10 +106,14 @@ Always preview first; only add --apply after I approve. Never ask me for tokens 
 
 ตัวอย่างคำสั่งที่พิมพ์ต่อได้:
 
+- "ช่วยทำความเข้าใจโปรเจกต์นี้รวมถึง GitHub repo หน่อย ว่ามีงานอะไรต้องทำบ้าง"
+- "สรุปงานใน ClickUp ที่ assign ให้ผม เทียบกับ issue และ PR ที่ค้างใน GitHub แล้วเรียงว่าควรทำอะไรก่อน"
 - "สร้างการ์ด ClickUp จากสเปก APP-010 ให้หน่อย preview ก่อนนะ"
 - "log เวลา 30 นาทีให้ TASK-43 ว่ารีวิวโค้ดเสร็จแล้ว"
 - "เริ่มงาน TASK-42 เขียน test ที่ fail ก่อน แล้วเปิด Draft PR"
 - "assign การ์ดทุกใบที่สร้างจากสเปกให้ฉัน ขอดู preview ก่อน"
+
+AI จะใช้ `tasks --mine` เพื่อหางานของคุณ ถ้ายังไม่รู้ว่าคุณคือ member คนไหนใน ClickUp (เช่น token ที่ใช้เป็นของ bot หรือของคนอื่นในทีม) CLI จะหยุดแล้วให้ AI ถามคุณก่อน ตอบเป็น email, username หรือ member ID ก็ได้ และสั่งให้จำไว้ในเครื่องได้ด้วย `--remember`
 
 ตัวติดตั้งวาง skill ไว้ที่ `~/.agents/skills/clickup-gh-workflow/SKILL.md` ถ้า AI ของคุณไม่ค้นพบเอง ให้ชี้ไปที่ไฟล์นี้หรือใช้คำสั่ง `skill`
 
@@ -119,6 +123,9 @@ Always preview first; only add --apply after I approve. Never ask me for tokens 
 |---|---|
 | ตรวจ config และการเชื่อมต่อ | `doctor` |
 | ดู member ID (ใช้ตอน assign) | `members` |
+| ดูงานทั้งหมดที่ยังไม่ปิดใน List | `tasks` |
+| ดูงานของฉัน | `tasks --mine` |
+| ดูงานของคนอื่น / ระบุตัวเองแล้วจำไว้ | `tasks --assignee you@example.com --remember` |
 | ตรวจสเปกแบบ offline | `plan` |
 | สร้างการ์ดจากสเปก | `create APP-010 --apply` |
 | อ่านการ์ด | `read TASK-42` |

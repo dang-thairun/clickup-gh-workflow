@@ -53,9 +53,9 @@ def validate(cfg, operation, ident, apply):
             raise ValueError(f'Invalid GitHub repository: {key}')
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_./-]*', cfg['base_branch']):
         raise ValueError('Invalid base branch')
-    if operation not in ('doctor','members','assign-backlog','group-backlog','create-card','read-card','set-estimates','read','update','estimate','status','diff','sync','time-list','time-log','time-edit','time-delete','resolve-start','pr-metadata'):
+    if operation not in ('doctor','members','tasks','assign-backlog','group-backlog','create-card','read-card','set-estimates','read','update','estimate','status','diff','sync','time-list','time-log','time-edit','time-delete','resolve-start','pr-metadata'):
         raise ValueError('Unsupported operation')
-    if operation not in ('doctor','members','assign-backlog','group-backlog') and not re.fullmatch(r'[A-Za-z0-9_]+(?:-[0-9]+)?', ident or ''):
+    if operation not in ('doctor','members','tasks','assign-backlog','group-backlog') and not re.fullmatch(r'[A-Za-z0-9_]+(?:-[0-9]+)?', ident or ''):
         raise ValueError('Expected a spec, configured custom ID or internal task ID')
     if operation in ('create-card', 'set-estimates') and not re.fullmatch(r'[A-Z][A-Z0-9]*-\d+', ident):
         raise ValueError('A spec ID is required for writes')

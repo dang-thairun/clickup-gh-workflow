@@ -10,7 +10,7 @@ BEGIN = '[clickup-gh-workflow:spec-begin]'
 END = '[clickup-gh-workflow:spec-end]'
 PRIORITIES = {'urgent': 1, 'high': 2, 'normal': 3, 'low': 4, 'none': None}
 WRITES = {'create-card', 'set-estimates', 'update', 'estimate', 'status', 'sync', 'time-log', 'time-edit', 'time-delete', 'pr-metadata'}
-OPERATIONS = WRITES | {'doctor', 'read-card', 'read', 'diff', 'time-list', 'resolve-start'}
+OPERATIONS = WRITES | {'doctor', 'read-card', 'read', 'diff', 'time-list', 'resolve-start', 'tasks'}
 
 
 def duration(text):
@@ -537,6 +537,87 @@ def pr_metadata(e, cfg, remote, opts, apply):
             state_result = set_status(e, cfg, remote, {'to': target}, apply)
     return dict(identity(remote), spec_id=spec_id(remote), apply=apply, fields=updates, pending_field_mapping=pending, status=state_result,
                 note='PR timestamps are separate custom fields; planned start/due are preserved. Merge never means QA-ready or DONE automatically.')
+
+
+def _member_summary(member):
+    user = member.get('user', member)
+    return {k: user.get(k) for k in ('id', 'username', 'email')}
+
+
+def resolve_member(members, selector):
+    """Match a List member by numeric ID, email or username; never guess."""
+    people = [_member_summary(m) for m in members]
+    wanted = str(selector).strip()
+    if not wanted:
+        raise ValueError('Assignee selector is empty')
+    folded = wanted.casefold()
+    matches = [p for p in people if str(p['id']) == wanted]
+    if not matches:
+        matches = [p for p in people if (p.get('email') or '').casefold() == folded]
+    if not matches:
+        matches = [p for p in people if (p.get('username') or '').casefold() == folded]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise ValueError('Assignee "' + wanted + '" matches several List members; use the numeric ID: '
+                         + ', '.join(f"{p['username']} ({p['id']})" for p in matches))
+    names = [p.get('username') or '' for p in people]
+    close = difflib.get_close_matches(wanted, names, n=3, cutoff=0.5)
+    hint = (' Did you mean: ' + ', '.join(close) + '?') if close else ''
+    raise ValueError('No member of this ClickUp List matches "' + wanted + '".' + hint
+                     + ' Run members to see valid IDs, then pass --assignee <id|email|username>.')
+
+
+def list_tasks(e, cfg, root, opts):
+    """Read-only listing of List tasks, optionally filtered to one verified member."""
+    opts = opts or {}
+    selector, mine = opts.get('assignee'), bool(opts.get('mine'))
+    person, source = None, None
+    if selector is not None or mine:
+        members = e.request('GET', '/list/' + cfg['list_id'] + '/member', e.token()).get('members', [])
+        if selector is not None:
+            person, source = resolve_member(members, selector), opts.get('assignee_source', 'argument')
+        else:
+            current = e.request('GET', '/user', e.token()).get('user') or {}
+            matches = [_member_summary(m) for m in members if str(_member_summary(m)['id']) == str(current.get('id'))]
+            if len(matches) != 1:
+                raise ValueError('Cannot tell who "mine" is: the ClickUp token belongs to '
+                                 + str(current.get('username') or current.get('id') or 'an unknown user')
+                                 + ', who is not a member of this List. Ask the user which ClickUp member they are '
+                                 + 'and pass --assignee <id|email|username> (add --remember to save it locally).')
+            person, source = matches[0], 'token-owner'
+    bindings_path = root / 'Implementation/clickup-bindings.json'
+    bound = {}
+    if bindings_path.exists():
+        bound = {v['id']: k for k, v in json.loads(bindings_path.read_text()).items() if isinstance(v, dict) and v.get('id')}
+    rows = []
+    for t in e.all_tasks(cfg):
+        if t.get('archived') or str((t.get('list') or {}).get('id', cfg['list_id'])) != cfg['list_id']:
+            continue
+        status = t.get('status') or {}
+        if not opts.get('include_closed') and status.get('type') in ('closed', 'done'):
+            continue
+        if person and not any(str(a.get('id')) == str(person['id']) for a in t.get('assignees', [])):
+            continue
+        match = re.match(r'^\[([A-Z][A-Z0-9]*-\d+)\]', t.get('name', ''))
+        priority = t.get('priority') or {}
+        rows.append({'id': t['id'], 'custom_id': t.get('custom_id'), 'name': t.get('name'),
+                     'spec_id': bound.get(t['id']) or (match[1] if match else None),
+                     'status': status.get('status'), 'priority': priority.get('priority'),
+                     'due_date': t.get('due_date'), 'start_date': t.get('start_date'),
+                     'time_estimate': t.get('time_estimate'), 'time_spent': t.get('time_spent'),
+                     'parent': t.get('parent'), 'url': t.get('url'),
+                     'assignees': [a.get('username') for a in t.get('assignees', [])]})
+    rows.sort(key=lambda r: (int(r['due_date']) if r['due_date'] else float('inf'), r['custom_id'] or r['id']))
+    counts = {}
+    for r in rows:
+        counts[r['status']] = counts.get(r['status'], 0) + 1
+    result = {'assignee': person, 'assignee_source': source, 'include_closed': bool(opts.get('include_closed')),
+              'total': len(rows), 'by_status': counts, 'tasks': rows}
+    if source == 'token-owner':
+        result['note'] = ('"mine" was resolved from the ClickUp token owner. If this token is shared '
+                          '(for example one GitHub Actions secret for the team), confirm this is you or pass --assignee.')
+    return result
 
 
 def dispatch(e, cfg, root, operation, ident, opts=None, apply=False):

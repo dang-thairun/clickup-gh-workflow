@@ -11,6 +11,8 @@ GitHub mode keeps CLICKUP_API_TOKEN in the configured fork's Actions secret. Eve
 
 Spec IDs, custom ClickUp IDs (prefix set by custom_id_prefix) and internal API IDs are different. Use read to confirm real custom IDs; do not invent them. Create imports one spec at a time and preserves existing content/status. Native custom fields require verified live schema; descriptions alone do not populate fields or dependency relations.
 
+To find work, use tasks (read-only): tasks lists open List tasks, tasks --mine filters to the user. If tasks --mine cannot resolve the user, or its result carries a note about a shared token owner, ask the user which ClickUp member they are (ID, email or username) and rerun with --assignee; add --remember only when they agree to save it locally. Never infer their ClickUp identity from git config, local email or chat names. Combine the listing with the repository, specs and gh issue/PR lists when the user asks what to work on.
+
 Estimate the lowest step subtasks and leave parent own estimates zero; points belong on delivery units. Rollup visibility depends on the ClickUp ClickApp. Actual time is not an estimate. start/stop is a local stopwatch that posts a completed entry when stopped, not a server-side running timer.
 
 Diff/sync manages the title and the marked spec region. Preserve manual notes and runtime status, priority, assignment, schedule and actual time. Sync apply requires a fresh preview hash. --adopt preserves legacy text and adds a managed region. On uncertain or partial writes, inspect remote state and the receipt; resume observes the existing run without replaying the mutation.

@@ -214,6 +214,29 @@ clickup-gh-workflow status TASK-42 --to "in progress" --apply
 
 สร้างซ้ำจะตรวจ identity และ bind งานเดิม รวม closed/archived เพื่อกันซ้ำ ไม่รีเซ็ต priority/status ของการ์ดเดิม และไม่ลบ subtasks เกินจากแผนอัตโนมัติ
 
+## 5.1 List tasks and "my work"
+
+```sh
+# งานที่ยังไม่ปิดทั้งหมดใน List (อ่านอย่างเดียว)
+clickup-gh-workflow tasks
+clickup-gh-workflow tasks --include-closed
+
+# งานของฉัน
+clickup-gh-workflow tasks --mine
+
+# ระบุตัวเองด้วย member ID, email หรือ username แล้วจำไว้ในเครื่อง
+clickup-gh-workflow tasks --assignee you@example.com --remember
+```
+
+ผลลัพธ์มี status, priority, due/start date, estimate, เวลาที่ใช้จริง, parent, URL และรหัสสเปกที่ผูกไว้ เรียงตาม due date และสรุปจำนวนตาม status
+
+`--mine` หาตัวตนตามลำดับนี้:
+
+1. **`.team-workflow/me.json`** ที่บันทึกจาก `--remember` ไฟล์นี้อยู่ในเครื่องและถูก gitignore ไม่ได้เก็บใน config ที่ทีมใช้ร่วมกัน
+2. **เจ้าของ ClickUp token** ใช้ได้เมื่อคนนั้นเป็น member ของ List และผลลัพธ์จะมี `note` เตือนว่าถ้า token ใช้ร่วมกัน (เช่น Actions secret เดียวทั้งทีม) ให้ตรวจว่าเป็นตัวคุณจริง
+
+ถ้าเจ้าของ token ไม่ได้อยู่ใน List คำสั่งจะหยุดและขอให้ระบุ `--assignee` แทนการคืนผลว่างหรือเดาเอง การจับคู่ `--assignee` เรียงลำดับดังนี้: ID ตรงกันก่อน แล้วจึงเป็น email และ username แบบไม่สนตัวพิมพ์ ถ้าชื่อซ้ำกันจะขอให้ใช้ ID ถ้าไม่พบจะแนะนำชื่อที่ใกล้เคียง
+
 ## 6. Estimates and actual time
 
 ```sh

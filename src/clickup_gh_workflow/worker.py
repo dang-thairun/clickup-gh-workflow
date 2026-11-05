@@ -21,6 +21,9 @@ def execute(engine, cfg, root, operation, ident, apply=False, options=None):
         members = engine.request('GET', '/list/' + cfg['list_id'] + '/member', engine.token())
         current = engine.request('GET', '/user', engine.token())
         return {'members': members.get('members', []), 'current_user': current.get('user')}
+    if operation == 'tasks':
+        extension = load_engine(Path(__file__).with_name('operations.py'))
+        return extension.list_tasks(engine, cfg, root, options or {})
     if operation == 'assign-backlog':
         extension = load_engine(Path(__file__).with_name('operations.py'))
         return extension.assign_backlog(engine, cfg, root, options or {}, apply)
