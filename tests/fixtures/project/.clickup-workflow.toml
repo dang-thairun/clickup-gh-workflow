@@ -1,0 +1,32 @@
+# Replace these example values with your project's actual settings.
+workspace_id = "100000"
+list_id = "200000"
+repository = "example-org/example-app"
+fork = "example-user/example-app"
+base_branch = "develop"
+custom_id_prefix = "DEV"
+
+[statuses]
+backlog = "backlog"
+ready = "ready"
+in_progress = "in progress"
+in_review = "in review"
+rework = "rework"
+
+[defaults]
+priority = "normal"
+
+[delivery]
+pr_unit = "spec"
+required_checks = ["test", "lint", "build"]
+allow_no_ci = false
+
+# Optional: verified native URL/date field IDs, not field labels.
+# [fields]
+# pr_link = "actual-pr-url-field-id"
+# pr_started_at = "actual-date-field-id"
+# pr_merged_at = "actual-date-field-id"
+
+[groups.features]
+name = "Example feature group"
+cards = ["APP-010", "APP-020"]

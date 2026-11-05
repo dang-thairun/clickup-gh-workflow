@@ -1,0 +1,15 @@
+{
+  "features": {
+    "id": "EXAMPLE_INTERNAL_ID",
+    "custom_id": "TASK-42",
+    "url": "https://app.clickup.com/t/EXAMPLE_INTERNAL_ID",
+    "name": "Example feature group",
+    "cards": [
+      "APP-010",
+      "APP-020"
+    ],
+    "branch": "feat/TASK-42-example-feature-group",
+    "pr_url": "https://github.com/example-org/example-app/pull/1",
+    "verified": false
+  }
+}

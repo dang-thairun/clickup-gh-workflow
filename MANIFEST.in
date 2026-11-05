@@ -1,0 +1,4 @@
+include README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
+recursive-include examples *.toml *.md *.json
+recursive-include tests *.py *.toml *.md
+include tests/fixtures/project/.clickup-workflow.toml

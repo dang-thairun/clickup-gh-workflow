@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clickup-gh-workflow"
+version = "1.0.4"
+description = "Provider-independent ClickUp cards, time tracking and GitHub PR workflow CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+clickup-gh-workflow = "clickup_gh_workflow.run:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+clickup_gh_workflow = ["templates/*.toml", "templates/*.md", "skill/SKILL.md"]
