@@ -21,4 +21,8 @@ Read delivery.pr_unit. Spec mode supports READY gating, one branch/PR per spec, 
 
 PR bodies begin with ClickUp-Task and commits end with the matching trailer. Ready requires current test/build/lint evidence, clean pushed commits and required successful CI. Missing native PR fields remain pending. A merge alone is not QA deployment or DONE. Never merge a PR or send review requests/comments without user authorization.
 
+Progress check (when the user asks what moved): read-only. For every card in ready, in progress or in review, and every open PR, read the card status and comments since the last check (read), the PR state, reviews and comments (pr read), and new merges on the configured upstream base. Report per card: newly READY, change requests to fix, RED approved, PR approved or merged, and backlog cards a merge just unblocked. Say plainly when nothing changed. Never change status or reply during a check.
+
+Follow-up (when the Lead or reviewer was tagged and has not answered): draft one summary for today, not a re-tag on each card. For each waiting item give the card and spec ID, the PR link, what is done, the exact question or approval needed, and what it unblocks. Order by what unblocks the most work. Write it in the language the user asks for; it may be a DM the user sends themself. Preview only; post or tag anything only after explicit OK.
+
 New cards/steps default to Normal priority. Assignment batches preserve other assignees and restrict scope to bound plan tasks and direct steps. group-backlog validates all configured groups, preserves task IDs and step relationships, and verifies the resulting hierarchy. Inspect a partial failure before retrying.

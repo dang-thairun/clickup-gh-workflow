@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Skill: add a read-only progress check across ClickUp and GitHub, and a single follow-up summary draft when the Lead has not answered.
 - Add read-only `tasks` command: list open tasks in the configured List, `--mine` for the current user, `--assignee` by member ID/email/username, `--remember` to save the identity in `.team-workflow/me.json`.
 - `--mine` refuses to guess when the ClickUp token owner is not a List member and warns when the identity comes from a possibly shared token.
 - README: one-command install, GitHub web steps for the `CLICKUP_API_TOKEN` secret, workflow diagram; full reference moved to `docs/guide.md`.
