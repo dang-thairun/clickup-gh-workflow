@@ -603,7 +603,7 @@ def list_tasks(e, cfg, root, opts):
         priority = t.get('priority') or {}
         rows.append({'id': t['id'], 'custom_id': t.get('custom_id'), 'name': t.get('name'),
                      'spec_id': bound.get(t['id']) or (match[1] if match else None),
-                     'status': status.get('status'), 'priority': priority.get('priority'),
+                     'status': status.get('status'), 'status_type': status.get('type'), 'priority': priority.get('priority'),
                      'due_date': t.get('due_date'), 'start_date': t.get('start_date'),
                      'time_estimate': t.get('time_estimate'), 'time_spent': t.get('time_spent'),
                      'parent': t.get('parent'), 'url': t.get('url'),
