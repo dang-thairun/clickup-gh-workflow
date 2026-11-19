@@ -20,6 +20,7 @@ from urllib.parse import urlencode, quote
 
 TASK_ID = r'[A-Z][A-Z0-9]*-\d+'
 CUSTOM_ID = r'DEV-\d+'
+USER_AGENT = 'clickup-gh-workflow/1.0.4'
 
 
 def custom_id_pattern(cfg):
@@ -33,7 +34,7 @@ def custom_id_pattern(cfg):
 def request(method, path, token, body=None, github=False):
     host = 'https://api.github.com' if github else 'https://api.clickup.com/api/v2'
     headers = {'Authorization': ('Bearer ' if github else '') + token,
-               'Content-Type': 'application/json', 'User-Agent': 'clickup-gh-workflow/1.0.4'}
+               'Content-Type': 'application/json', 'User-Agent': USER_AGENT}
     req = Request(host + path, data=None if body is None else json.dumps(body).encode(),
                   headers=headers, method=method)
     try:

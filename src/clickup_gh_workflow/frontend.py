@@ -42,14 +42,20 @@ def parser():
     s.add_argument('--remember', action='store_true', help='Save the resolved member locally as "mine" (.team-workflow/me.json)')
     s.add_argument('--include-closed', action='store_true')
     add_run_flags(s)
+    add_run_flags(sub.add_parser('sprints', help='Read Sprint folders/lists in the configured List space'))
+    add_run_flags(sub.add_parser('link-deps', help='Mirror spec Dependency lines as ClickUp waiting-on links'), True)
     for name,help_text in (('assign-backlog','Add an assignee to bound plan cards and their direct subtasks'), ('group-backlog','Organize existing delivery units under configured summary parents')):
         s=sub.add_parser(name,help=help_text)
         s.add_argument('--assignee',type=int,required=True); add_run_flags(s,True)
         if name=='group-backlog': s.add_argument('--pr-file',type=Path,help='Verified group PR records to link back to ClickUp')
-    for name in ('create', 'read', 'diff', 'sync', 'status', 'estimate', 'update'):
+    for name in ('create', 'read', 'diff', 'sync', 'status', 'estimate', 'update', 'comment', 'attach'):
         s = sub.add_parser(name)
         s.add_argument('id')
         add_run_flags(s, name not in ('read', 'diff'))
+        if name == 'attach': s.add_argument('--file', required=True, help='PNG under Implementation/mockups/')
+        if name == 'comment':
+            s.add_argument('--text-file', type=Path, required=True)
+            s.add_argument('--mention', type=int, action='append', default=[], help='List member ID to tag; repeatable')
         if name == 'create': s.add_argument('--priority',choices=['urgent','high','normal','low','none'])
         if name == 'sync':
             s.add_argument('--adopt', action='store_true', help='Preserve legacy text and add a managed spec section')
@@ -176,6 +182,15 @@ def _main(argv, r):
         result=rpc('tasks',None,False,options)
         if args.remember and result.get('assignee') and not getattr(args,'prepare_only',False):
             write(me_path,result['assignee'])
+    elif args.cmd=='sprints': result=rpc('sprints',None)
+    elif args.cmd=='link-deps': result=rpc('link-deps',None,args.apply)
+    elif args.cmd=='attach':
+        p=Path(args.file)
+        if p.parent.as_posix()!='Implementation/mockups' or p.suffix.lower()!='.png' or (root/p).is_symlink() or not (root/p).is_file(): raise ValueError('Attach only an existing PNG under Implementation/mockups/')
+        result=rpc('attach',args.id,args.apply,{'file':p.as_posix()})
+    elif args.cmd=='comment':
+        if args.text_file.name=='.env': raise ValueError('Do not upload an environment secret file')
+        result=rpc('comment',args.id,args.apply,{'text':args.text_file.read_text().strip(),'mentions':args.mention})
     elif args.cmd=='assign-backlog': result=rpc('assign-backlog',None,args.apply,{'assignee':args.assignee})
     elif args.cmd=='group-backlog':
         options={'assignee':args.assignee}

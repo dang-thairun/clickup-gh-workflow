@@ -214,6 +214,26 @@ clickup-gh-workflow status TASK-42 --to "in progress" --apply
 
 สร้างซ้ำจะตรวจ identity และ bind งานเดิม รวม closed/archived เพื่อกันซ้ำ ไม่รีเซ็ต priority/status ของการ์ดเดิม และไม่ลบ subtasks เกินจากแผนอัตโนมัติ
 
+## 5.0 Comments, mockups, sprints and dependencies
+
+```sh
+# คอมเมนต์จากไฟล์ Markdown; --mention รับ member ID จาก members (ใส่ได้หลายครั้ง)
+clickup-gh-workflow comment TASK-42 --text-file /path/to/note.md --mention 123456
+clickup-gh-workflow comment TASK-42 --text-file /path/to/note.md --mention 123456 --apply
+
+# แนบ PNG ที่อยู่ใน Implementation/mockups/ เท่านั้น ไฟล์ชื่อเดิมที่แนบแล้วจะข้าม
+clickup-gh-workflow attach TASK-42 --file Implementation/mockups/screen.png --apply
+
+# อ่าน folder ที่ชื่อมีคำว่า sprint ใน Space ของ List (อ่านอย่างเดียว)
+clickup-gh-workflow sprints
+
+# สร้างลิงก์ "waiting on" ตามบรรทัด **Dependency:** ของสเปกที่ bind แล้ว
+clickup-gh-workflow link-deps
+clickup-gh-workflow link-deps --apply
+```
+
+`comment` ตรวจว่าทุก `--mention` เป็น member ของ List ก่อน ไม่ notify ทุกคน และอ่านคอมเมนต์กลับมายืนยันหลังโพสต์ `attach` ปฏิเสธไฟล์นอก `Implementation/mockups/`, ไฟล์ที่ไม่ใช่ `.png` และ symlink ใน GitHub mode จะส่งเฉพาะภาพนั้นไปกับ worker `link-deps` เพิ่มลิงก์ที่ขาดเท่านั้น ไม่ลบลิงก์เดิม และรายงานสเปกที่ dependency ยังไม่ได้ bind เป็น `unbound`
+
 ## 5.1 List tasks and "my work"
 
 ```sh

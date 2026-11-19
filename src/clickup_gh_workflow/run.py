@@ -53,13 +53,13 @@ def validate(cfg, operation, ident, apply):
             raise ValueError(f'Invalid GitHub repository: {key}')
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_./-]*', cfg['base_branch']):
         raise ValueError('Invalid base branch')
-    if operation not in ('doctor','members','tasks','assign-backlog','group-backlog','create-card','read-card','set-estimates','read','update','estimate','status','diff','sync','time-list','time-log','time-edit','time-delete','resolve-start','pr-metadata'):
+    if operation not in ('doctor','members','tasks','assign-backlog','group-backlog','create-card','read-card','set-estimates','read','update','estimate','status','diff','sync','time-list','time-log','time-edit','time-delete','resolve-start','pr-metadata','sprints','link-deps','comment','attach'):
         raise ValueError('Unsupported operation')
-    if operation not in ('doctor','members','tasks','assign-backlog','group-backlog') and not re.fullmatch(r'[A-Za-z0-9_]+(?:-[0-9]+)?', ident or ''):
+    if operation not in ('doctor','members','tasks','sprints','link-deps','assign-backlog','group-backlog') and not re.fullmatch(r'[A-Za-z0-9_]+(?:-[0-9]+)?', ident or ''):
         raise ValueError('Expected a spec, configured custom ID or internal task ID')
     if operation in ('create-card', 'set-estimates') and not re.fullmatch(r'[A-Z][A-Z0-9]*-\d+', ident):
         raise ValueError('A spec ID is required for writes')
-    if apply and operation not in ('group-backlog','assign-backlog','create-card','set-estimates','update','estimate','status','sync','time-log','time-edit','time-delete','pr-metadata'):
+    if apply and operation not in ('group-backlog','assign-backlog','create-card','set-estimates','update','estimate','status','sync','time-log','time-edit','time-delete','pr-metadata','link-deps','comment','attach'):
         raise ValueError('--apply is not valid for this read-only operation')
 
 
@@ -130,6 +130,10 @@ def prepare(root, operation, ident, apply, prepare_only=False, options=None):
     bindings = root / 'Implementation/clickup-bindings.json'
     if bindings.exists():
         shutil.copy2(bindings, project / 'Implementation/clickup-bindings.json')
+    # Mockup images travel only for attach, so other runs push nothing extra.
+    if operation == 'attach':
+        (project / 'Implementation/mockups').mkdir()
+        shutil.copy2(root / options['file'], project / options['file'])
     shutil.copy2(engine_path(), temp / payload / 'engine.py')
     shutil.copy2(HERE / 'worker.py', temp / payload / 'worker.py')
     shutil.copy2(HERE / 'operations.py', temp / payload / 'operations.py')
