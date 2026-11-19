@@ -17,4 +17,4 @@ clickup-gh-workflow = "clickup_gh_workflow.run:cli"
 where = ["src"]
 
 [tool.setuptools.package-data]
-clickup_gh_workflow = ["templates/*.toml", "templates/*.md", "skill/SKILL.md"]
+clickup_gh_workflow = ["templates/*.toml", "templates/*.md", "templates/*.html", "skill/SKILL.md"]

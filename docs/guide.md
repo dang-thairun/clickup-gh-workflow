@@ -237,6 +237,54 @@ clickup-gh-workflow tasks --assignee you@example.com --remember
 
 ถ้าเจ้าของ token ไม่ได้อยู่ใน List คำสั่งจะหยุดและขอให้ระบุ `--assignee` แทนการคืนผลว่างหรือเดาเอง การจับคู่ `--assignee` เรียงลำดับดังนี้: ID ตรงกันก่อน แล้วจึงเป็น email และ username แบบไม่สนตัวพิมพ์ ถ้าชื่อซ้ำกันจะขอให้ใช้ ID ถ้าไม่พบจะแนะนำชื่อที่ใกล้เคียง
 
+## 5.2 Delivery board
+
+```sh
+clickup-gh-workflow board                    # อ่าน tasks 1 ครั้ง แล้วสร้าง .team-workflow/board.html
+clickup-gh-workflow board --comments         # อ่านคอมเมนต์ทุกการ์ดใหม่ด้วย (read ทีละใบ ช้า)
+clickup-gh-workflow board --offline          # ไม่เรียก ClickUp ใช้ cache และ receipt ที่มีอยู่
+clickup-gh-workflow board --lead 12345678    # นับเฉพาะคอมเมนต์ของ Lead ว่าเป็นข้อความใหม่
+```
+
+อ่านอย่างเดียว ไม่เขียนอะไรลง ClickUp หรือ GitHub ได้ไฟล์ HTML ไฟล์เดียว เปิดใน browser ได้เลย พอดีหนึ่งหน้าจอ เวลาที่แสดงเป็นเวลาของเครื่อง (เช่น GMT+7)
+
+**ข้อมูลมาจากไหน**
+
+| ข้อมูล | ที่มา |
+|---|---|
+| รหัสสเปกและ dependency | `Implementation/*-spec.md` (ตัวเดียวกับ `plan`) |
+| สถานะ, parent, URL ของทุกการ์ด | `tasks --include-closed` หนึ่งครั้ง (ผ่าน Actions ประมาณครึ่งนาที) |
+| คอมเมนต์บนการ์ด | receipt ของ `read` ล่าสุด หรือ cache; `--comments` อ่านใหม่ทุกใบ |
+| PR, รีวิว, review thread, CI | `gh` (ต้อง login แล้ว) |
+
+ผลของ `tasks` และคอมเมนต์ถูกเก็บใน `.team-workflow/board-cache.json` เพื่อให้ `--offline` ใช้ได้
+
+**แท็บ ClickUp**
+
+- การ์ดหนึ่งใบต่อหนึ่งสเปก แยกเป็นแถวตาม parent (main task) ชื่อแถวมีลิงก์ไป main task แถวเรียงตามลำดับที่ต้องทำก่อน
+- สีพื้นตาม status ใน `[statuses]` ของ config: backlog เทา, ready เขียว, in progress น้ำเงิน, in review ม่วง, rework ส้ม; status อื่นที่ยังไม่ merge (เช่น `ready to merge`) เป็นสีเขียวน้ำทะเล; ที่ merge แล้วหรือปิดแล้ว (เช่น `testing`) เป็นสีชมพู
+- ในการ์ด: บนซ้ายเลขการ์ด (ลิงก์ ClickUp), บนขวารหัสสเปก, กลางชื่อ, ล่างซ้าย status, ล่างขวาลิงก์ PR และ "ตาใคร" เช่น ตาคุณ, รอหัวหน้ารีวิว, รอ merge, รอหัวหน้าเปิด ready, รอ APP-010
+- เส้นเขียวทึบ: การ์ดที่ต้องรอผ่านแล้ว (PR merge แล้ว หรือ ClickUp บอกว่า done/closed) · เส้นเทาประ: ยังรอ · กรอบเขียว: เริ่มได้
+- **รอกี่วัน:** นับจากคอมเมนต์แรกของคุณหลังจากที่ Lead พูดล่าสุด แสดงบนการ์ดที่เป็นตาของ Lead เหลืองเมื่อถึง 3 วัน
+- **ป้ายแดง "ใหม่":** Lead คอมเมนต์หลังคอมเมนต์ล่าสุดของคุณ คอมเมนต์ที่ขึ้นต้นด้วย `GitHub workflow sync:` ไม่นับ เพราะ bot sync สถานะมักโพสต์ด้วย token ของคน
+- ชี้ที่การ์ด: การ์ดที่เกี่ยวข้องชัดขึ้น ที่เหลือจาง และมุมขวาบนแสดง PR กับคอมเมนต์ล่าสุดของการ์ดนั้น
+- กดตัวเลขสรุป (ตาคุณ, รอหัวหน้า, ข้อความใหม่) เพื่อกรองการ์ด กดซ้ำหรือ `Esc` เพื่อยกเลิก; ปุ่ม `1` / `2` สลับแท็บ
+
+**แท็บ GitHub:** PR ที่ยังเปิดและที่ merge แล้ว พร้อมสถานะ, รีวิวล่าสุด, CI, review thread ที่ยังไม่ resolve (หรือ "resolve ครบ") และลิงก์ไปการ์ด PR ที่ปิดโดยไม่ merge ถูกพับไว้ด้านล่าง
+
+**ใครคือ "คุณ" และ "Lead"**
+
+- คุณ: `--me` ถ้าใส่, ไม่งั้นใช้ `.team-workflow/me.json` (จาก `tasks --remember`) รวมกับ login ของ `gh`
+- Lead: `--lead` ถ้าใส่, ไม่งั้น `[board].lead` ใน config, ไม่งั้นทุกคนที่ไม่ใช่คุณ
+
+```toml
+[board]
+lead = "12345678"                                  # ClickUp member id, username หรือ email
+ignore_comment_prefixes = ["GitHub workflow sync:"]  # ข้อความ bot ที่ไม่นับเป็นข้อความใหม่
+```
+
+ไฟล์บอร์ดมีข้อความจากการ์ดของทีม เก็บไว้ในเครื่อง (`.team-workflow/` ถูก gitignore) อย่า publish
+
 ## 6. Estimates and actual time
 
 ```sh

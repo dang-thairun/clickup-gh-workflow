@@ -13,6 +13,11 @@ in_progress = "in progress"
 in_review = "in review"
 rework = "rework"
 
+# Optional: delivery board (`board`). Lead = ClickUp member id, username or email.
+# [board]
+# lead = "12345678"
+# ignore_comment_prefixes = ["GitHub workflow sync:"]
+
 [defaults]
 priority = "normal"
 

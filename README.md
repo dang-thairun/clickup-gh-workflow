@@ -9,6 +9,7 @@ A standalone CLI for ClickUp cards, subtasks, schedules, estimates, tracked time
 - 📝 **สเปก → การ์ด** — อ่าน `Implementation/*-spec.md` แล้วสร้าง/sync การ์ด ClickUp พร้อม subtasks และ dependency
 - ⏱️ **Estimate และเวลาจริง** — กระจาย estimate ลง subtasks, log เวลา, จับเวลา start/stop
 - 🔀 **Branch → PR** — เปิด branch, เก็บหลักฐาน test RED/GREEN, เปิด Draft PR และอัปเดตสถานะการ์ดตาม PR
+- 🗺️ **บอร์ดภาพรวม** — `board` สร้างหน้า HTML เดียวที่เห็นการ์ดทุกใบตามสีสถานะ เส้นว่าใบไหนรอใบไหน ตาใคร รอมากี่วัน และ PR พร้อมรีวิวกับ CI
 - 🤖 **ใช้กับ AI ได้ทุกตัว** — Claude Code, Codex, Cursor หรือ agent อื่นที่รัน Terminal ได้ มีคำแนะนำสำหรับ AI ในตัว (`clickup-gh-workflow skill`)
 - 🔒 **ปลอดภัยเป็นค่าเริ่มต้น** — ทุกคำสั่งที่เขียนข้อมูลแค่ *preview* จนกว่าจะใส่ `--apply`; token ClickUp อยู่ใน GitHub Actions secret ไม่ลงเครื่อง
 
@@ -127,6 +128,7 @@ AI จะใช้ `tasks --mine` เพื่อหางานของคุ�
 | ดูงานของฉัน | `tasks --mine` |
 | ดูงานของคนอื่น / ระบุตัวเองแล้วจำไว้ | `tasks --assignee you@example.com --remember` |
 | ตรวจสเปกแบบ offline | `plan` |
+| ดูภาพรวมการ์ดและ PR (HTML) | `board` · `board --comments` · `board --offline` |
 | สร้างการ์ดจากสเปก | `create APP-010 --apply` |
 | อ่านการ์ด | `read TASK-42` |
 | แก้ priority / กำหนดการ / assignee | `update TASK-42 --priority high --apply` |

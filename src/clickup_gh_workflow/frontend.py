@@ -89,6 +89,13 @@ def parser():
     for action in ('open','read','checks','ready','draft','sync'):
         s=actions.add_parser(action); s.add_argument('id'); add_run_flags(s, action not in ('read','checks'))
         if action=='open': s.add_argument('--draft',action='store_true',default=True)
+    s=sub.add_parser('board',help='Read-only HTML board of cards, dependencies and PRs in local time')
+    s.add_argument('--out',type=Path,default=Path('.team-workflow/board.html'))
+    s.add_argument('--comments',action='store_true',help='read every spec card again for fresh comments (one read per card)')
+    s.add_argument('--offline',action='store_true',help='no ClickUp call: use the board cache and receipts')
+    s.add_argument('--me',help='your ClickUp id, username or email (default: .team-workflow/me.json, then gh login)')
+    s.add_argument('--lead',help='Lead ClickUp id, username or email (default: config [board].lead, else anyone but you)')
+    add_run_flags(s)
     s=sub.add_parser('resume'); s.add_argument('receipt',type=Path); s.add_argument('--timeout',type=int,default=600)
     s=sub.add_parser('github',help='Compatibility transport syntax'); s.add_argument('args',nargs=argparse.REMAINDER)
     s=sub.add_parser('local',help='Compatibility API CLI syntax'); s.add_argument('args',nargs=argparse.REMAINDER)
@@ -154,6 +161,9 @@ def _main(argv, r):
     result=None
     if args.cmd=='doctor': result=rpc('doctor',None)
     elif args.cmd=='members': result=rpc('members',None)
+    elif args.cmd=='board':
+        out=args.out if args.out.is_absolute() else root/args.out
+        result=module('board').build(root,cfg,r['engine'](),rpc,out,args.me,args.lead,args.comments,args.offline)
     elif args.cmd=='tasks':
         me_path=root/'.team-workflow/me.json'
         if args.remember and not (args.assignee or args.mine): raise ValueError('--remember needs --assignee or --mine')

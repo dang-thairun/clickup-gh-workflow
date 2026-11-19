@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add read-only `board` command: one HTML page with a ClickUp tab (cards colored by status in lanes per main task, dependency lines, whose turn it is, days waiting on the Lead, a badge for new Lead comments, filters, hover details) and a GitHub tab (PR state, latest review, checks, unresolved review threads, card links). One `tasks` read per run; `--comments` re-reads comments, `--offline` uses the cache. Local time.
+- `tasks` rows include `status_type` so callers can tell done/closed statuses from custom ones.
 - Skill: add a read-only progress check across ClickUp and GitHub, and a single follow-up summary draft when the Lead has not answered.
 - Add read-only `tasks` command: list open tasks in the configured List, `--mine` for the current user, `--assignee` by member ID/email/username, `--remember` to save the identity in `.team-workflow/me.json`.
 - `--mine` refuses to guess when the ClickUp token owner is not a List member and warns when the identity comes from a possibly shared token.
