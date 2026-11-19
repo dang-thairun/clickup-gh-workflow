@@ -13,7 +13,7 @@ def load_engine(path):
 
 
 def execute(engine, cfg, root, operation, ident, apply=False, options=None):
-    if apply and operation not in ('group-backlog','assign-backlog','create-card','set-estimates','update','estimate','status','sync','time-log','time-edit','time-delete','pr-metadata'):
+    if apply and operation not in ('group-backlog','assign-backlog','create-card','set-estimates','update','estimate','status','sync','time-log','time-edit','time-delete','pr-metadata','link-deps','comment','attach'):
         raise ValueError('Read-only operations do not accept apply')
     if operation == 'doctor':
         return engine.doctor(cfg)
@@ -24,6 +24,22 @@ def execute(engine, cfg, root, operation, ident, apply=False, options=None):
     if operation == 'tasks':
         extension = load_engine(Path(__file__).with_name('operations.py'))
         return extension.list_tasks(engine, cfg, root, options or {})
+    if operation == 'sprints':
+        # ponytail: sprint folders detected by name containing "sprint"; switch to a configured folder id if naming differs
+        def get(path):
+            try: return engine.request('GET', path, engine.token())
+            except ValueError as exc: return {'error': path.split('?')[0] + ': ' + str(exc).split(';')[0]}
+        lst = get('/list/' + cfg['list_id'])
+        space = (lst.get('space') or {}).get('id')
+        folders = get('/space/' + str(space) + '/folder?archived=false') if space else {}
+        return {'list_name': lst.get('name'), 'space_id': space, 'errors': [x['error'] for x in (lst, folders) if 'error' in x],
+                'sprint_folders': [{'id': f['id'], 'name': f['name'], 'lists': [
+                    {k: l.get(k) for k in ('id', 'name', 'start_date', 'due_date', 'task_count')} for l in f.get('lists', [])]}
+                    for f in folders.get('folders', []) if 'sprint' in f['name'].lower()],
+                'all_folder_names': [f['name'] for f in folders.get('folders', [])]}
+    if operation == 'link-deps':
+        extension = load_engine(Path(__file__).with_name('operations.py'))
+        return extension.link_deps(engine, cfg, root, apply)
     if operation == 'assign-backlog':
         extension = load_engine(Path(__file__).with_name('operations.py'))
         return extension.assign_backlog(engine, cfg, root, options or {}, apply)

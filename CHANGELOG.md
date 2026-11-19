@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `comment` (post one comment from a file, `--mention` tags verified List members, read back to verify), `attach` (upload one PNG from `Implementation/mockups/`, skip names already attached), read-only `sprints` (Sprint folders and lists in the List's Space) and `link-deps` (mirror spec `Dependency:` lines as ClickUp waiting-on links, never removes). Writes preview by default and need `--apply`.
 - Add read-only `board` command: one HTML page with a ClickUp tab (cards colored by status in lanes per main task, dependency lines, whose turn it is, days waiting on the Lead, a badge for new Lead comments, filters, hover details) and a GitHub tab (PR state, latest review, checks, unresolved review threads, card links). One `tasks` read per run; `--comments` re-reads comments, `--offline` uses the cache. Local time.
 - `tasks` rows include `status_type` so callers can tell done/closed statuses from custom ones.
 - Skill: add a read-only progress check across ClickUp and GitHub, and a single follow-up summary draft when the Lead has not answered.

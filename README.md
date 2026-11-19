@@ -133,6 +133,10 @@ AI จะใช้ `tasks --mine` เพื่อหางานของคุ�
 | อ่านการ์ด | `read TASK-42` |
 | แก้ priority / กำหนดการ / assignee | `update TASK-42 --priority high --apply` |
 | เปลี่ยนสถานะ | `status TASK-42 --to "in progress" --apply` |
+| คอมเมนต์และแท็กคน | `comment TASK-42 --text-file note.md --mention 123456 --apply` |
+| แนบภาพ mockup (PNG) | `attach TASK-42 --file Implementation/mockups/screen.png --apply` |
+| ดู Sprint folder/list ใน Space | `sprints` |
+| สร้าง dependency ใน ClickUp ตามสเปก | `link-deps --apply` |
 | เทียบ/อัปเดตการ์ดจากสเปก | `diff APP-010` · `sync APP-010 --apply` |
 | ใส่ estimate ตามสเปก | `estimate APP-010 --apply` |
 | บันทึกเวลาทำงาน | `time log TASK-43 --duration 30m --apply` |

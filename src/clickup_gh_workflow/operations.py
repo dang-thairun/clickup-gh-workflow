@@ -9,7 +9,7 @@ from urllib.parse import quote, urlencode
 BEGIN = '[clickup-gh-workflow:spec-begin]'
 END = '[clickup-gh-workflow:spec-end]'
 PRIORITIES = {'urgent': 1, 'high': 2, 'normal': 3, 'low': 4, 'none': None}
-WRITES = {'create-card', 'set-estimates', 'update', 'estimate', 'status', 'sync', 'time-log', 'time-edit', 'time-delete', 'pr-metadata'}
+WRITES = {'create-card', 'set-estimates', 'update', 'estimate', 'status', 'sync', 'time-log', 'time-edit', 'time-delete', 'pr-metadata', 'comment', 'attach'}
 OPERATIONS = WRITES | {'doctor', 'read-card', 'read', 'diff', 'time-list', 'resolve-start', 'tasks'}
 
 
@@ -620,6 +620,85 @@ def list_tasks(e, cfg, root, opts):
     return result
 
 
+def comment(e, cfg, remote, opts, apply):
+    """Post one comment; mentions must be verified List members."""
+    text, mentions = (opts.get('text') or '').strip(), opts.get('mentions', [])
+    if not text:
+        raise ValueError('Comment text is empty')
+    members = {m['id']: m['username'] for m in e.request('GET', '/list/' + cfg['list_id'] + '/member', e.token()).get('members', [])}
+    unknown = [m for m in mentions if m not in members]
+    if unknown:
+        raise ValueError('Mentions must be List members: ' + ', '.join(map(str, unknown)))
+    parts = [{'type': 'tag', 'user': {'id': m}} for m in mentions] + [{'text': (' ' if mentions else '') + text}]
+    result = {'apply': apply, 'id': remote['id'], 'custom_id': remote.get('custom_id'), 'mentions': [members[m] for m in mentions], 'text': text}
+    if not apply:
+        return result
+    posted = e.request('POST', '/task/' + quote(remote['id']) + '/comment', e.token(), {'comment': parts, 'notify_all': False})
+    listed = e.request('GET', '/task/' + quote(remote['id']) + '/comment', e.token()).get('comments', [])
+    result.update(comment_id=posted.get('id'), verified=any(str(c['id']) == str(posted.get('id')) for c in listed))
+    return result
+
+
+def attach(e, root, remote, opts, apply):
+    """Upload one mockup PNG as a task attachment; skip if the same name is already attached."""
+    import uuid
+    from urllib.request import Request, urlopen
+    path = root / opts['file']
+    name = path.name
+    existing = [a for a in remote.get('attachments', []) if a.get('title') == name]
+    result = {'apply': apply, 'id': remote['id'], 'custom_id': remote.get('custom_id'), 'file': name, 'bytes': path.stat().st_size, 'already_attached': bool(existing)}
+    if not apply or existing:
+        return result
+    boundary = uuid.uuid4().hex
+    body = (f'--{boundary}\r\nContent-Disposition: form-data; name="attachment"; filename="{name}"\r\nContent-Type: image/png\r\n\r\n').encode() + path.read_bytes() + f'\r\n--{boundary}--\r\n'.encode()
+    req = Request('https://api.clickup.com/api/v2/task/' + quote(remote['id']) + '/attachment', data=body, method='POST',
+                  headers={'Authorization': e.token(), 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'User-Agent': e.USER_AGENT})
+    try:
+        with urlopen(req, timeout=60) as response:
+            posted = json.loads(response.read() or b'{}')
+    except Exception as exc:
+        # Never retry blindly: the upload may have landed. Bodies are not printed.
+        raise ValueError('Attachment upload failed: ' + type(exc).__name__ + ' ' + str(getattr(exc, 'code', '')) + '; inspect the card before retrying') from None
+    after = e.request('GET', '/task/' + quote(remote['id']), e.token()).get('attachments', [])
+    result.update(attachment_id=posted.get('id'), url=posted.get('url'), verified=any(a.get('title') == name for a in after))
+    return result
+
+
+def link_deps(e, cfg, root, apply):
+    """Mirror spec Dependency lines as ClickUp "waiting on" links; never removes links."""
+    bindings = json.loads((root / 'Implementation/clickup-bindings.json').read_text())
+    tasks = {t['id']: t for t in e.all_tasks(cfg)}
+    def linked(a, b):
+        return any(d.get('task_id') == a and d.get('depends_on') == b for d in tasks.get(a, {}).get('dependencies', []))
+    rows, todo = [], []
+    for c in e.parse_cards(root):
+        sid = c['spec_id']
+        if sid not in bindings:
+            continue
+        line = re.search(r'\*\*Dependency:\*\* (.+)', c['description'])
+        deps = [d for d in re.findall(e.TASK_ID, line[1]) if d != sid] if line else []
+        a = bindings[sid]['id']
+        row = {'spec_id': sid, 'custom_id': bindings[sid].get('custom_id'), 'waits_on': [], 'unbound': []}
+        for d in deps:
+            if d not in bindings:
+                row['unbound'].append(d); continue
+            b = bindings[d]['id']
+            state = 'exists' if linked(a, b) else 'create'
+            row['waits_on'].append({'spec_id': d, 'custom_id': bindings[d].get('custom_id'), 'action': state})
+            if state == 'create':
+                todo.append((a, b))
+        rows.append(row)
+    result = {'apply': apply, 'to_create': len(todo), 'cards': rows}
+    if not apply:
+        return result
+    for a, b in todo:
+        e.request('POST', '/task/' + quote(a) + '/dependency', e.token(), {'depends_on': b})
+    tasks = {t['id']: t for t in e.all_tasks(cfg)}
+    missing = [[a, b] for a, b in todo if not linked(a, b)]
+    result.update(verified=not missing, missing=missing)
+    return result
+
+
 def dispatch(e, cfg, root, operation, ident, opts=None, apply=False):
     opts = opts or {}
     remote = task(e, cfg, ident)
@@ -635,4 +714,6 @@ def dispatch(e, cfg, root, operation, ident, opts=None, apply=False):
         return time_entries(e,cfg,remote,dict(opts,mode=operation.split('-',1)[1]),apply)
     if operation == 'resolve-start': return resolve_start(e, cfg, root, remote)
     if operation == 'pr-metadata': return pr_metadata(e, cfg, remote, opts, apply)
+    if operation == 'comment': return comment(e, cfg, remote, opts, apply)
+    if operation == 'attach': return attach(e, root, remote, opts, apply)
     raise ValueError('Unsupported operation')
