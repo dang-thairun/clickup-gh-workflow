@@ -54,6 +54,29 @@ class GlobalWorkflowTests(unittest.TestCase):
                 self.assertEqual(json.loads(path.read_text())['state'],'prepared')
                 self.assertFalse((root/'.git').exists())
 
+    def test_automation_commit_fetches_nothing_and_carries_only_the_payload(self):
+        real = runner.command
+        calls = []
+        def fake(args, cwd=None, timeout=90):
+            calls.append(args)
+            if 'fetch' in args or 'push' in args:
+                return ''  # network: recorded, never run
+            return real(args, cwd, timeout)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            (root/'.clickup-workflow.toml').write_text((ROOT/'.clickup-workflow.toml').read_text())
+            with patch.object(runner, 'command', side_effect=fake), \
+                 patch.object(runner, 'gh_json', return_value={'permissions': {'push': True}}):
+                _, receipt = runner.prepare(root, 'read-card', 'APP-020', False, False)
+            self.assertFalse([c for c in calls if 'fetch' in c])
+            self.assertEqual(receipt['state'], 'pushed')
+            staging, sha = receipt['staging'], receipt['head_sha']
+            parents = real(['git', 'rev-list', '--parents', '-n', '1', sha], staging).split()
+            self.assertEqual(parents, [sha])  # no parent commit
+            files = real(['git', 'ls-tree', '-r', '--name-only', sha], staging).split()
+            self.assertTrue(files)
+            self.assertTrue(all(f.startswith(('.team-workflow-runs/', '.github/workflows/team-workflow-')) for f in files))
+
     def test_global_install_runs_without_codex_or_plugin_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
             prefix=Path(tmp)/'prefix'; skill=Path(tmp)/'skill'
