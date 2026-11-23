@@ -155,14 +155,13 @@ def prepare(root, operation, ident, apply, prepare_only=False, options=None):
     # Isolated staging checkout. Never switch, stage or commit the user's working tree.
     command(['git', 'init', '--quiet'], temp)
     command(['git', 'remote', 'add', 'origin', 'https://github.com/' + cfg['fork'] + '.git'], temp)
-    command(['git', '-c', 'credential.helper=!gh auth git-credential', 'fetch', '--depth=1', 'origin', cfg['base_branch']], temp)
-    # read-tree seeds the index without checking out files or executing project code/hooks.
-    command(['git', 'read-tree', 'FETCH_HEAD'], temp)
+    # A parentless commit with only the payload and its workflow: the worker needs nothing from the
+    # project branch, so nothing is fetched (a base branch with large files timed out at 90 s) and
+    # the Actions checkout stays small.
     command(['git', 'add', '--', payload, str(workflow.relative_to(temp))], temp)
     tree = command(['git', 'write-tree'], temp).strip()
-    parent = command(['git', 'rev-parse', 'FETCH_HEAD'], temp).strip()
     sha = command(['git', '-c', 'user.name=Team Workflow', '-c', 'user.email=team-workflow@localhost',
-                   'commit-tree', tree, '-p', parent, '-m', f'workflow: {operation} {ident or ""}'], temp).strip()
+                   'commit-tree', tree, '-m', f'workflow: {operation} {ident or ""}'], temp).strip()
     receipt.update(head_sha=sha, state='push-pending')
     save_receipt(receipt_path, receipt)
     command(['git', '-c', 'credential.helper=!gh auth git-credential', 'push', 'origin', sha + ':refs/heads/' + branch], temp)
