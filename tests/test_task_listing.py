@@ -164,3 +164,23 @@ class TaskCommandWiringTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ReadCommentsTests(unittest.TestCase):
+    def test_read_returns_the_card_comments(self):
+        engine = Mock()
+        engine.TASK_ID = r'[A-Z]+-\d+'
+        engine.custom_id_pattern.return_value = r'DEV-\d+'
+        engine.get_task.return_value = {'id': 'abc'}
+        thread = [{'id': '1', 'comment_text': 'looks good', 'user': {'username': 'lead'}}]
+
+        def request(method, path, token, body=None):
+            if path == '/task/abc/comment':
+                return {'comments': thread}
+            if path.startswith('/task/abc?'):
+                return {'id': 'abc', 'custom_id': 'DEV-1', 'name': 'x', 'list': {'id': '123'}}
+            raise AssertionError('Unexpected request ' + path)
+        engine.request.side_effect = request
+        result = ops.dispatch(engine, {'list_id': '123'}, Path('.'), 'read', 'DEV-1')
+        self.assertEqual(result['comments'], thread)
+        self.assertEqual(result['custom_id'], 'DEV-1')

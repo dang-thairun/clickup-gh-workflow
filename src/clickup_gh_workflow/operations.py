@@ -704,7 +704,9 @@ def dispatch(e, cfg, root, operation, ident, opts=None, apply=False):
     remote = task(e, cfg, ident)
     if operation == 'read':
         fields = ('id','custom_id','name','url','description','markdown_description','status','priority','assignees','start_date','due_date','time_estimate','time_spent','parent','dependencies','subtasks','custom_fields')
-        return {key: remote.get(key) for key in fields}
+        # Comments feed `board` (Lead's latest word). ClickUp returns the newest 25, enough for that.
+        comments = e.request('GET', '/task/' + quote(remote['id']) + '/comment', e.token()).get('comments', [])
+        return {**{key: remote.get(key) for key in fields}, 'comments': comments}
     if operation == 'update': return update(e, cfg, remote, opts, apply)
     if operation == 'status': return set_status(e, cfg, remote, opts, apply)
     if operation == 'estimate': return estimate(e, cfg, root, remote, opts, apply)
