@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `board`: open ClickUp cards with no local spec (a spec ID missing from `Implementation/`, or a top-level card that is not a main task) now show in a "Not in specs" lane instead of being left out.
 - GitHub mode: the automation commit no longer fetches the fork's base branch. It is a parentless commit with only the payload and its workflow, so a base with large files (216 MB in one project) no longer hits the 90 s fetch timeout, and the Actions checkout is small.
 - Add `comment` (post one comment from a file, `--mention` tags verified List members, read back to verify), `attach` (upload one PNG from `Implementation/mockups/`, skip names already attached), read-only `sprints` (Sprint folders and lists in the List's Space) and `link-deps` (mirror spec `Dependency:` lines as ClickUp waiting-on links, never removes). Writes preview by default and need `--apply`.
 - Add read-only `board` command: one HTML page with a ClickUp tab (cards colored by status in lanes per main task, dependency lines, whose turn it is, days waiting on the Lead, a badge for new Lead comments, filters, hover details) and a GitHub tab (PR state, latest review, checks, unresolved review threads, card links). One `tasks` read per run; `--comments` re-reads comments, `--offline` uses the cache. Local time.
