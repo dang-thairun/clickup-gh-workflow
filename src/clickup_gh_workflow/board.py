@@ -61,9 +61,12 @@ def model(specs, deps, tasks, comments, prs, cfg, me, lead=None, now_ms=None, ig
         for c in p['cards'] if p['state'] != 'CLOSED' else []:
             pr_by_card.setdefault(c, []).append(p['n'])
 
+    # Open ClickUp cards with no local spec (e.g. spec still on an unmerged branch, or made by hand):
+    # a spec ID that is not in the specs, or a top-level card that is not a group. Steps under them stay out.
+    extra = [t for t in tasks if t.get('status_type') not in ('done', 'closed') and t['id'] not in parents
+             and (t.get('spec_id') not in known if t.get('spec_id') else not t.get('parent'))]
     cards = []
-    for spec in specs:
-        t = spec_rows.get(spec)
+    for spec, t in [(s, spec_rows.get(s)) for s in specs] + [(t.get('spec_id') or t.get('custom_id') or t['id'], t) for t in extra]:
         if not t:
             continue  # spec not created in ClickUp yet
         cid = t.get('custom_id') or t['id']
@@ -82,7 +85,7 @@ def model(specs, deps, tasks, comments, prs, cfg, me, lead=None, now_ms=None, ig
             'status': t.get('status') or '?', 'role': role,
             # past the gate for cards that wait on it: its PR merged, or ClickUp marks the status done/closed
             'passed': cid in merged or t.get('status_type') in ('done', 'closed'),
-            'group': g['name'] if g else 'Other', 'group_link': g and {'id': g.get('custom_id') or g['id'], 'url': g.get('url')},
+            'group': g['name'] if g else ('Other' if spec in known else 'Not in specs'), 'group_link': g and {'id': g.get('custom_id') or g['id'], 'url': g.get('url')},
             'deps': deps.get(spec, []), 'prs': pr_by_card.get(cid, []),
             'lead_new': last_them > max(mine or [0]), 'waiting_since': min(asked) if asked else None,
             'last_comment': last and {'by': (last.get('user') or {}).get('username', '?'),

@@ -54,6 +54,16 @@ class BoardModelTests(unittest.TestCase):
         self.assertEqual(cards['APP-010']['group'], 'Group one')
         self.assertEqual(cards['APP-010']['group_link'], {'id': 'TASK-1', 'url': 'https://app.clickup.com/t/g1'})
 
+    def test_open_cards_without_a_local_spec_get_their_own_lane(self):
+        extra = [row('60', 'APP-060', 'in review', parent=None),
+                 {'id': 'h1', 'custom_id': 'TASK-61', 'name': 'Hand-made card', 'status': 'backlog', 'parent': None},
+                 row('70', 'APP-070', 'complete', parent=None, kind='closed')]
+        data = board.model(SPECS, DEPS, TASKS + extra, {}, [], CFG, ME, LEAD, now_ms=30 * DAY)
+        cards = {c['spec']: c for c in data['cards']}
+        self.assertEqual(sorted(cards), SPECS + ['APP-060', 'TASK-61'])
+        self.assertEqual(cards['APP-060']['group'], 'Not in specs')
+        self.assertEqual(cards['APP-060']['role'], 'in_review')
+
     def test_roles_follow_configured_statuses_and_unknown_is_later(self):
         cards, data = build()
         self.assertEqual(cards['APP-030']['role'], 'backlog')
